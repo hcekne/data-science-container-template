@@ -1,0 +1,52 @@
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    git \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
+WORKDIR /app
+
+# Copy requirements file
+COPY requirements.txt /app/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy the entire project
+COPY . /app
+
+# Install the package
+RUN pip install --no-cache-dir /app
+
+# Use build arguments for user details
+ARG USER_NAME
+ARG USER_ID
+ARG GROUP_ID
+
+# Create necessary directories
+RUN mkdir -p /app/data/raw /app/data/processed /app/data/output /app/notebooks
+
+# Create a non-root user with home directory that matches the host user
+RUN groupadd -g $GROUP_ID $USER_NAME && \
+    useradd -u $USER_ID -g $GROUP_ID -m -d /home/$USER_NAME -s /bin/bash $USER_NAME
+
+# Set permissions for all directories
+RUN chown -R $USER_NAME:$USER_NAME /app
+
+# Expose ports for Jupyter
+EXPOSE 8888
+EXPOSE 80
+EXPOSE 8501
+# Switch to the non-root user
+USER $USER_NAME
+
+# Default environment for Jupyter
+ENV JUPYTER_TOKEN=easy
+
+# Launch Jupyter when the container starts
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--NotebookApp.token=easy"]

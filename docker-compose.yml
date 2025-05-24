@@ -1,0 +1,30 @@
+services:
+  data_science:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        USER_NAME: ${USER_NAME}
+        USER_ID: ${USER_ID}
+        GROUP_ID: ${GROUP_ID}
+      #no_cache: true
+    image: data-science-template:latest
+    container_name: data-science-container
+    user: "${USER_NAME}"
+    volumes:
+      - .:/app  # Mount the current directory to /app in the container
+      - ./custom_startup.sh:/usr/local/bin/custom_startup.sh
+    ports:
+      - "8888:8888"  # Jupyter port
+      - "8503:8501" # Streamlit port mapped to different on host to not interfere with other app
+    environment:
+      - JUPYTER_TOKEN=easy
+      - USER_ID=${USER_ID}
+      - GROUP_ID=${GROUP_ID}
+      - USER_NAME=${USER_NAME}
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - START_JUPYTER=yes
+    entrypoint: ["/usr/local/bin/custom_startup.sh"]
+    command: ["tail", "-f", "/dev/null"]
