@@ -151,6 +151,12 @@ setup_project() {
     print_message "Cloning template repository using $GIT_PROTOCOL protocol..."
     if git clone "$TEMPLATE_REPO" "$PROJECT_NAME"; then
         print_success "Template repository cloned to $PROJECT_NAME."
+        # Remove the create_ds_project.sh immediately after cloning
+        if [ -f "$PROJECT_NAME/create_ds_project.sh" ]; then
+            rm "$PROJECT_NAME/create_ds_project.sh"
+            print_success "Removed create_ds_project.sh from the new project."
+        fi
+
     else
         print_error "Failed to clone template repository."
         print_message "Please check your GitHub username and make sure the repository exists."
@@ -360,13 +366,6 @@ show_instructions() {
         echo "  git remote add origin $REPO_URL_FORMAT"
         echo "  git push -u origin main"
         echo
-    fi
-
-    # Delete the script itself as it's no longer needed in the new project
-    print_message "Cleaning up..."
-    if [ -f "${PROJECT_NAME}/create_ds_project.sh" ]; then
-        rm "${PROJECT_NAME}/create_ds_project.sh"
-        print_success "Removed create_ds_project.sh from the new project."
     fi
     
     print_success "Happy coding!"
