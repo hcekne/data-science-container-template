@@ -235,7 +235,7 @@ A data science project with containerized development environment.
 
 3. **Access Streamlit Demo** (if available):
    \`\`\`
-   http://localhost:8501
+   http://localhost:8503
    \`\`\`
 
 ## Project Structure
@@ -262,9 +262,13 @@ A data science project with containerized development environment.
 ### Using with VS Code
 
 1. Open VS Code
-2. Install the "Remote - Containers" extension
-3. Press F1 and select "Remote-Containers: Open Folder in Container..."
-4. Select this project folder
+2. Install the "Dev Containers" extension (formerly "Remote - Containers")
+3. Start the container using the provided script:
+   ```bash
+   ./start_dev_container.sh
+   ```
+4. In VS Code, press F1 and select "Dev Containers: Attach to Running Container..."
+5. Select the ${PROJECT_NAME}-container from the list
 
 ### Helpful Scripts
    
@@ -273,13 +277,13 @@ A data science project with containerized development environment.
 
 ### Environment Variables
 
-The container loads environment variables from the `.env` file. This includes:
+The container loads environment variables from the .env file. This includes:
 
 - API keys for LLM providers (OpenAI, Anthropic, Groq)
 - User configuration variables
 - Additional project-specific variables
 
-See `example_env` for the required variables format.
+See example_env for the required variables format.
 
 ## License
 
