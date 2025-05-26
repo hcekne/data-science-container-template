@@ -34,6 +34,7 @@ data/output/*
 
 # Environment variables
 .env
+!example_env
 
 # DuckDB
 *.db

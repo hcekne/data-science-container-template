@@ -270,20 +270,21 @@ A data science project with containerized development environment.
 1. Open VS Code
 2. Install the "Dev Containers" extension (formerly "Remote - Containers")
 3. Start the container using the provided script:
-   ```bash
+   \`\`\`
+   bash
    ./start_dev_container.sh
-   ```
+   \`\`\`
 4. In VS Code, press F1 and select "Dev Containers: Attach to Running Container..."
 5. Select the ${PROJECT_NAME}-container from the list
 
 ### Helpful Scripts
    
-- **Commit Message Generator**: `python scripts/suggest_commit_message.py`  
+- **Commit Message Generator**: python scripts/suggest_commit_message.py
     Analyzes your changes and suggests meaningful commit messages
 
 ### Environment Variables
 
-The container loads environment variables from the .env file. This includes:
+The container loads environment variables from the env file. This includes:
 
 - API keys for LLM providers (OpenAI, Anthropic, Groq)
 - User configuration variables
