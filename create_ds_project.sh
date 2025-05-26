@@ -318,7 +318,7 @@ EOF
     print_success "Made scripts executable."
     
     # Initialize new Git repository
-    git init
+    git init -b main
     git add .
     git commit -m "Initial commit: Project created from data-science-container-template"
     
