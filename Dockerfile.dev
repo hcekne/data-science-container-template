@@ -45,8 +45,8 @@ RUN mkdir -p /home/$USER_NAME/.jupyter && \
 
 # Expose ports for Jupyter
 EXPOSE 8888
-EXPOSE 80
-EXPOSE 8501
+# Streamlit port
+EXPOSE 8501 
 
 # Switch to the non-root user
 USER $USER_NAME

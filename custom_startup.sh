@@ -31,3 +31,4 @@ jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --ServerApp.token=easy &
 
 # Run the command specified when running the container
 exec "$@"
+

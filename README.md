@@ -1,6 +1,6 @@
 # Data Science Container Template
 
-A reusable Docker container template for data science projects with Jupyter, DuckDB, and development tools.
+A template for quickly creating Docker-based data science environments with Jupyter, DuckDB, and development tools.
 
 ## Features
 
@@ -11,72 +11,71 @@ A reusable Docker container template for data science projects with Jupyter, Duc
 - Docker-based development environment
 - Non-root user setup for better security
 
-## Getting Started
+## Usage Options
 
-### Prerequisites
+### Option 1: Create a New Project (Recommended)
 
-- Docker
-- Docker Compose
-- VS Code with Remote Containers extension (optional)
+Download and run the project creation script:
 
-### Quick Start
+```bash
+# Download the script
+curl -O https://raw.githubusercontent.com/yourusername/data-science-container-template/main/create_ds_project.sh
 
+# Make it executable
+chmod +x create_ds_project.sh
 
-1. **Clone this repository and cd into it**:
+# Run it
+./create_ds_project.sh
+```
+
+Follow the prompts to create a customized project.
+
+### Option 2: Clone and Modify
+
+1. **Clone this repository**:
    ```bash
-   git clone https://github.com/yourusername/data-science-container-template.git
-   cd data-science-container-template
+   git clone https://github.com/yourusername/data-science-container-template.git my_project
+   cd my_project
    ```
 
-1.5 **Rename example_env to .env and set your personal environment variables**:
+2. **Remove Git history and initialize new repository**:
+   ```bash
+   rm -rf .git
+   git init
+   ```
+
+3. **Rename example_env to .env and set your personal environment variables**:
    ```bash
    nano example_env # and set the variables
    mv example_env .env # rename to .env
    ```
 
-2. **Start the development container**:
+4. **Start the development container**:
    ```bash
-   docker-compose up -d
+   ./start_dev_container.sh
    ```
 
-3. **Access Jupyter Lab**:
-   Open your browser and navigate to:
-   ```
-   http://localhost:8888?token=easy
-   ```
+## Prerequisites
 
-### Using with VS Code
+- Docker
+- Docker Compose
+- Git
+- GitHub CLI (optional, for automatic repository creation)
 
-1. Open VS Code
-2. Install the "Remote - Containers" extension
-3. Press F1 and select "Remote-Containers: Open Folder in Container..."
-4. Select the cloned repository folder
+## Development
 
-### Container Structure
+### Making Changes to the Template
 
-- `/app`: Main workspace directory
-- `/app/data`: Data directory
-  - `/app/data/raw`: Raw data files
-  - `/app/data/processed`: Processed data files
-  - `/app/data/output`: Output files and results
-- `/app/notebooks`: Jupyter notebooks
-- `/app/scripts`: Python scripts
+1. Modify the template files as needed
+2. Update the `create_ds_project.sh` script if necessary
+3. Test by creating a new project
+4. Push changes to the template repository
 
-## Customizing
-
-### Adding Python Packages
+### Adding Default Python Packages
 
 1. Add your required packages to `requirements.txt`
-2. Rebuild the container:
-   ```bash
-   docker-compose down
-   docker-compose up --build -d
-   ```
-
-### Persistent Jupyter Extensions
-
-Add Jupyter extensions to the Dockerfile.dev under the "Install Jupyter extensions" section.
+2. Packages will be included in all new projects created from this template
 
 ## License
 
-Apache License  
+Apache License

@@ -9,6 +9,8 @@ services:
         GROUP_ID: ${GROUP_ID}
       #no_cache: true
     image: data-science-template:latest
+    env_file:
+      - .env # loads the environment variables
     container_name: data-science-container
     user: "${USER_NAME}"
     volumes:

@@ -204,23 +204,14 @@ EOF
     else
         print_warning "docker-compose.yml not found. Skipping update."
     fi
-    
-    # Update README.md
+        
+        # Update README.md
     if [ -f "README.md" ]; then
-        # Replace the first line (title) with the new project name
-        sed -i "1s/.*/${DISPLAY_NAME}/" README.md
-        
-        # Replace occurrences of the template name in the content
-        sed -i "s/data-science-container-template/${PROJECT_NAME}/g" README.md
-        sed -i "s/data_science_project/${PACKAGE_NAME}_project/g" README.md
-        
-        print_success "Updated README.md."
-    else
-        print_warning "README.md not found. Creating a new one..."
+        # Create a new README appropriate for a generated project
         cat > README.md << EOF
-# ${DISPLAY_NAME}
+    # ${DISPLAY_NAME}
 
-A data science project based on the container template.
+A data science project with containerized development environment.
 
 ## Getting Started
 
@@ -242,15 +233,61 @@ A data science project based on the container template.
    http://localhost:8888?token=easy
    \`\`\`
 
+3. **Access Streamlit Demo** (if available):
+   \`\`\`
+   http://localhost:8501
+   \`\`\`
+
 ## Project Structure
 
 - \`/${PACKAGE_NAME}_project\`: Main package directory
 - \`/data\`: Data directory
+  - \`/data/raw\`: Raw data files
+  - \`/data/processed\`: Processed data files
+  - \`/data/output\`: Output files and results
 - \`/notebooks\`: Jupyter notebooks
 - \`/scripts\`: Python scripts
 
+## Development
+
+### Adding Python Packages
+
+1. Add your required packages to \`requirements.txt\`
+2. Rebuild the container:
+   \`\`\`bash
+   docker-compose down
+   docker-compose up --build -d
+   \`\`\`
+
+### Using with VS Code
+
+1. Open VS Code
+2. Install the "Remote - Containers" extension
+3. Press F1 and select "Remote-Containers: Open Folder in Container..."
+4. Select this project folder
+
+### Helpful Scripts
+   
+- **Commit Message Generator**: `python scripts/suggest_commit_message.py`  
+    Analyzes your changes and suggests meaningful commit messages
+
+### Environment Variables
+
+The container loads environment variables from the `.env` file. This includes:
+
+- API keys for LLM providers (OpenAI, Anthropic, Groq)
+- User configuration variables
+- Additional project-specific variables
+
+See `example_env` for the required variables format.
+
+## License
+
+Apache License
 EOF
-        print_success "Created new README.md."
+        print_success "Created new README.md for generated project."
+    else
+        print_warning "README.md not found. Skipping update."
     fi
     
     # Update the imports in Python files if they exist
@@ -319,6 +356,13 @@ show_instructions() {
         echo "  git remote add origin $REPO_URL_FORMAT"
         echo "  git push -u origin main"
         echo
+    fi
+
+    # Delete the script itself as it's no longer needed in the new project
+    print_message "Cleaning up..."
+    if [ -f "${PROJECT_NAME}/create_ds_project.sh" ]; then
+        rm "${PROJECT_NAME}/create_ds_project.sh"
+        print_success "Removed create_ds_project.sh from the new project."
     fi
     
     print_success "Happy coding!"
