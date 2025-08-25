@@ -47,3 +47,6 @@ PyYAML==6.0.1
 
 # Development
 ipython>=8.14.0
+
+# Data sources
+kagglehub>=0.3.12

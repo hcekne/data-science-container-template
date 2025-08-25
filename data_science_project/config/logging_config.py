@@ -1,3 +1,5 @@
+from data_science_project.config.paths import APP_LOGS_DIR
+
 LOGGING_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -17,14 +19,14 @@ LOGGING_CONFIG = {
             'level': 'INFO',
             'formatter': 'standard',
             'class': 'logging.FileHandler',
-            'filename': 'data/logs/app.log',
+            'filename': str(APP_LOGS_DIR / 'app.log'),
             'mode': 'a',
         },
         'model_file_handler': {
             'level': 'INFO',
             'formatter': 'standard',
             'class': 'logging.FileHandler',
-            'filename': 'data/logs/model_handler.log',
+            'filename': str(APP_LOGS_DIR / 'model_handler.log'),
             'mode': 'a',
         },
     },

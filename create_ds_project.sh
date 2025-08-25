@@ -143,6 +143,56 @@ get_project_details() {
     fi
 }
 
+# Canonical template package name used inside source files
+ORIGINAL_PACKAGE="data_science_project"
+
+# Replace all references to the old package name with the new one (token-safe)
+replace_package_references() {
+    local old="$1"
+    local new="$2"
+
+    print_message "Updating package references: ${old} -> ${new}"
+
+    # Target file patterns (text files only)
+    local -a patterns=("*.py" "*.pyi" "*.md" "*.rst" "*.ini" "*.cfg" "*.toml" "*.yaml" "*.yml" "Dockerfile" "*.sh")
+
+    # Build find args
+    local -a find_args=()
+    for p in "${patterns[@]}"; do
+        find_args+=(-name "$p" -o)
+    done
+    unset 'find_args[${#find_args[@]}-1]'  # drop last -o
+
+    # Collect files, excluding common build/cache dirs
+    mapfile -d '' files < <(find . \
+        -path "./.git" -prune -o \
+        -path "./.venv" -prune -o \
+        -path "./venv" -prune -o \
+        -path "./.mypy_cache" -prune -o \
+        -path "./.ruff_cache" -prune -o \
+        -type f \( "${find_args[@]}" \) -print0)
+
+    if command -v perl >/dev/null 2>&1; then
+        # Use Perl word-boundary with escaping
+        for f in "${files[@]}"; do
+            perl -0777 -i -pe "s/\\b\\Q${old}\\E\\b/${new}/g" "$f"
+        done
+    else
+        # Fallback to GNU sed word boundaries
+        for f in "${files[@]}"; do
+            sed -i -r "s/\\<${old}\\>/${new}/g" "$f"
+        done
+    fi
+
+    # Best-effort update for notebooks (string replace)
+    mapfile -d '' nbs < <(find . -type f -name "*.ipynb" -print0)
+    for nb in "${nbs[@]}"; do
+        sed -i "s/${old//\//\\/}/${new//\//\\/}/g" "$nb" || true
+    done
+
+    print_success "Package references updated."
+}
+
 # Clone and setup project
 setup_project() {
     print_message "Setting up project..."
@@ -301,10 +351,9 @@ EOF
         print_warning "README.md not found. Skipping update."
     fi
     
-    # Update the imports in Python files if they exist
-    find . -type f -name "*.py" -exec sed -i "s/from data_science_project/from ${PACKAGE_NAME}_project/g" {} \;
-    find . -type f -name "*.py" -exec sed -i "s/import data_science_project/import ${PACKAGE_NAME}_project/g" {} \;
-    print_success "Updated Python imports."
+    # Update imports and references across the repo (e.g., from data_science_project...)
+    replace_package_references "$ORIGINAL_PACKAGE" "${PACKAGE_NAME}_project"
+    print_success "Updated Python imports and related references."
     
     # If there's a streamlit_demo.py, update it with the new project name
     if [ -f "streamlit_demo.py" ]; then

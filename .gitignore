@@ -25,12 +25,8 @@ var/
 */.ipynb_checkpoints/*
 
 # Data files
-data/raw/*
-data/processed/*
-data/output/*
-!data/raw/.gitkeep
-!data/processed/.gitkeep
-!data/output/.gitkeep
+data/**
+!data/**/.gitkeep
 
 # Environment variables
 .env
