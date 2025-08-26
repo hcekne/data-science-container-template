@@ -26,9 +26,22 @@ if [ -d /app ]; then
     find /app -type d -not -user $USER_ID -exec chown $USER_ID:$GROUP_ID {} \; 2>/dev/null || true
 fi
 
-# Start Jupyter Lab in the background
-echo "Starting Jupyter Lab in the background..."
-jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --ServerApp.token=easy &
+# Start Jupyter (optional)
+if [[ "${START_JUPYTER:-yes}" == "yes" ]]; then
+    echo "Starting Jupyter Lab on 0.0.0.0:8888 ..."
+    jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --ServerApp.token=easy &
+fi
+
+# Start Streamlit (optional)
+if [[ "${START_STREAMLIT:-no}" == "yes" ]]; then
+    APP_PATH="${STREAMLIT_APP_PATH:-webapp/streamlit_demo.py}"
+    if [ -f "/app/${APP_PATH}" ]; then
+        echo "Starting Streamlit (${APP_PATH}) on 0.0.0.0:8501 ..."
+        streamlit run "/app/${APP_PATH}" --server.port=8501 --server.address=0.0.0.0 &
+    else
+        echo "[warn] Streamlit app not found at /app/${APP_PATH}. Skipping."
+    fi
+fi
 
 # Run the command specified when running the container
 exec "$@"
