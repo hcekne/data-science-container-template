@@ -20,5 +20,7 @@ docker-compose build && docker-compose up -d
 echo "Container started!"
 echo "Access Jupyter Lab at: http://localhost:8888?token=easy"
 echo ""
+echo "Access Streamlit webapp at: http://localhost:8503"
+echo ""
 echo "To enter the container:"
 echo "docker exec -it data_science_project-container bash"

@@ -6,6 +6,7 @@ A template for quickly creating Docker-based data science environments with Jupy
 
 - Jupyter Lab environment ready to use
 - DuckDB for fast analytics
+- Streamlit server for webapp prototypes
 - Python data science packages pre-installed
 - VS Code compatible with Dev Containers
 - Docker-based development environment
@@ -19,7 +20,7 @@ Download and run the project creation script:
 
 ```bash
 # Download the script
-curl -O https://raw.githubusercontent.com/yourusername/data-science-container-template/main/create_ds_project.sh
+curl -O https://raw.githubusercontent.com/hcekne/data-science-container-template/create_ds_project.sh
 
 # Make it executable
 chmod +x create_ds_project.sh
@@ -34,7 +35,7 @@ Follow the prompts to create a customized project.
 
 1. **Clone this repository**:
    ```bash
-   git clone https://github.com/yourusername/data-science-container-template.git my_project
+   git clone https://github.com/hcekne/data-science-container-template.git my_project
    cd my_project
    ```
 
@@ -44,10 +45,10 @@ Follow the prompts to create a customized project.
    git init
    ```
 
-3. **Rename example_env to .env and set your personal environment variables**:
+3. **Rename .env.example to .env and set your personal environment variables**:
    ```bash
-   nano example_env # and set the variables
-   mv example_env .env # rename to .env
+   nano .env.example # and set the variables
+   mv .env.example .env # rename to .env
    ```
 
 4. **Start the development container**:
