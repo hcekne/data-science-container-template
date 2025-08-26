@@ -150,20 +150,12 @@ ORIGINAL_PACKAGE="data_science_project"
 replace_package_references() {
     local old="$1"
     local new="$2"
-
     print_message "Updating package references: ${old} -> ${new}"
-
-    # Target file patterns (text files only)
     local -a patterns=("*.py" "*.pyi" "*.md" "*.rst" "*.ini" "*.cfg" "*.toml" "*.yaml" "*.yml" "Dockerfile" "*.sh")
-
-    # Build find args
     local -a find_args=()
-    for p in "${patterns[@]}"; do
-        find_args+=(-name "$p" -o)
-    done
-    unset 'find_args[${#find_args[@]}-1]'  # drop last -o
+    for p in "${patterns[@]}"; do find_args+=(-name "$p" -o); done
+    unset 'find_args[${#find_args[@]}-1]'
 
-    # Collect files, excluding common build/cache dirs
     mapfile -d '' files < <(find . \
         -path "./.git" -prune -o \
         -path "./.venv" -prune -o \
@@ -173,188 +165,189 @@ replace_package_references() {
         -type f \( "${find_args[@]}" \) -print0)
 
     if command -v perl >/dev/null 2>&1; then
-        # Use Perl word-boundary with escaping
         for f in "${files[@]}"; do
             perl -0777 -i -pe "s/\\b\\Q${old}\\E\\b/${new}/g" "$f"
         done
     else
-        # Fallback to GNU sed word boundaries
         for f in "${files[@]}"; do
             sed -i -r "s/\\<${old}\\>/${new}/g" "$f"
         done
     fi
 
-    # Best-effort update for notebooks (string replace)
+    # Best-effort for notebooks
     mapfile -d '' nbs < <(find . -type f -name "*.ipynb" -print0)
-    for nb in "${nbs[@]}"; do
-        sed -i "s/${old//\//\\/}/${new//\//\\/}/g" "$nb" || true
-    done
+    for nb in "${nbs[@]}"; do sed -i "s/${old//\//\\/}/${new//\//\\/}/g" "$nb" || true; done
 
     print_success "Package references updated."
+}
+
+# Ensure/patch pyproject.toml for src layout and correct package name
+update_pyproject() {
+    local pkg="$1"
+
+    if [ -f "pyproject.toml" ]; then
+        print_message "Patching existing pyproject.toml for src layout and package '${pkg}'..."
+
+        # Update [project].name (simple replace)
+        if grep -qE '^\[project\]' pyproject.toml; then
+            # Replace first name = "..."
+            awk -v RS= -v ORS="\n\n" -v pkg="$pkg" '
+                BEGIN{patched=0}
+                /^\[project\]/{
+                    sub(/\nname *= *"[^"]*"/, "\nname = \"" pkg "\"")
+                    if ($0 !~ /\nname *= *"/) { $0 = $0 "\nname = \"" pkg "\"" }
+                    patched=1
+                }
+                { printf "%s", $0 }
+            ' pyproject.toml > pyproject.toml.tmp && mv pyproject.toml.tmp pyproject.toml
+        else
+            printf "\n[project]\nname = \"%s\"\nversion = \"0.1.0\"\nrequires-python = \">=3.12\"\n" "$pkg" >> pyproject.toml
+        fi
+
+        # Ensure [tool.setuptools] and [tool.setuptools.packages.find]
+        if ! grep -qE '^\[tool\.setuptools\]' pyproject.toml; then
+            printf "\n[tool.setuptools]\npackage-dir = {\"\" = \"src\"}\n" >> pyproject.toml
+        elif ! grep -q 'package-dir' pyproject.toml; then
+            # Add package-dir under existing section
+            awk -v RS= -v ORS="\n\n" '
+                /^\[tool\.setuptools\]/{
+                    if ($0 !~ /package-dir/) { $0 = $0 "\npackage-dir = {\"\" = \"src\"}" }
+                }
+                { printf "%s", $0 }
+            ' pyproject.toml > pyproject.toml.tmp && mv pyproject.toml.tmp pyproject.toml
+        fi
+
+        if ! grep -qE '^\[tool\.setuptools\.packages\.find\]' pyproject.toml; then
+            printf "\n[tool.setuptools.packages.find]\nwhere = [\"src\"]\ninclude = [\"%s*\"]\n" "$pkg" >> pyproject.toml
+        else
+            # Force where=["src"], update include
+            awk -v RS= -v ORS="\n\n" -v pkg="$pkg" '
+                /^\[tool\.setuptools\.packages\.find\]/{ 
+                    gsub(/where *= *\[.*\]/, "where = [\"src\"]")
+                    if ($0 ~ /include *= *\[/) {
+                        gsub(/include *= *\[.*\]/, "include = [\"" pkg "*\"]")
+                    } else {
+                        $0 = $0 "\ninclude = [\"" pkg "*\"]"
+                    }
+                }
+                { printf "%s", $0 }
+            ' pyproject.toml > pyproject.toml.tmp && mv pyproject.toml.tmp pyproject.toml
+        fi
+
+        print_success "pyproject.toml updated."
+    else
+        print_warning "pyproject.toml not found. Creating a new one for src layout..."
+        cat > pyproject.toml <<EOF
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "${pkg}"
+version = "0.1.0"
+requires-python = ">=3.12"
+readme = "README.md"
+description = "Generated project"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["${pkg}*"]
+EOF
+        print_success "Created pyproject.toml."
+    fi
 }
 
 # Clone and setup project
 setup_project() {
     print_message "Setting up project..."
-    
-    # Clone the repository directly to the project directory
     print_message "Cloning template repository using $GIT_PROTOCOL protocol..."
     if git clone "$TEMPLATE_REPO" "$PROJECT_NAME"; then
         print_success "Template repository cloned to $PROJECT_NAME."
-        # Remove the create_ds_project.sh immediately after cloning
         if [ -f "$PROJECT_NAME/create_ds_project.sh" ]; then
             rm "$PROJECT_NAME/create_ds_project.sh"
             print_success "Removed create_ds_project.sh from the new project."
         fi
-
     else
         print_error "Failed to clone template repository."
         print_message "Please check your GitHub username and make sure the repository exists."
         print_message "Also verify your SSH keys are set up if using SSH protocol."
         exit 1
     fi
-    
-    # Remove Git history
+
     rm -rf "$PROJECT_NAME/.git"
     print_success "Git history removed."
-    
-    # Customize project files
-    cd "$PROJECT_NAME" || exit 1
-    
-    # Rename package directory
-    if [ -d "data_science_project" ]; then
-        mv "data_science_project" "${PACKAGE_NAME}_project"
-        print_success "Renamed package directory."
-    else
-        print_warning "Package directory 'data_science_project' not found. Skipping rename."
-        # Create the package directory if it doesn't exist
-        mkdir -p "${PACKAGE_NAME}_project"
-        touch "${PACKAGE_NAME}_project/__init__.py"
-        print_success "Created new package directory."
-    fi
-    
-    # Update setup.py
-    if [ -f "setup.py" ]; then
-        sed -i "s/name=\"data_science_project\"/name=\"${PACKAGE_NAME}_project\"/" setup.py
-        sed -i "s/version=\"0.1\"/version=\"0.1.0\"/" setup.py
-        print_success "Updated setup.py."
-    else
-        print_warning "setup.py not found. Creating a new one..."
-        cat > setup.py << EOF
-from setuptools import setup, find_packages
 
-setup(
-    name="${PACKAGE_NAME}_project",
-    version="0.1.0",
-    packages=find_packages(),
-)
-EOF
-        print_success "Created new setup.py."
+    cd "$PROJECT_NAME" || exit 1
+
+    # Ensure src layout and rename package directory
+    if [ -d "src/${ORIGINAL_PACKAGE}" ]; then
+        mv "src/${ORIGINAL_PACKAGE}" "src/${PACKAGE_NAME}"
+        print_success "Renamed package directory: src/${ORIGINAL_PACKAGE} -> src/${PACKAGE_NAME}."
+    elif [ -d "${ORIGINAL_PACKAGE}" ]; then
+        # Fallback for older template without src layout
+        mkdir -p src
+        mv "${ORIGINAL_PACKAGE}" "src/${PACKAGE_NAME}"
+        print_success "Moved and renamed package directory into src/: ${ORIGINAL_PACKAGE} -> src/${PACKAGE_NAME}."
+    else
+        print_warning "Package directory '${ORIGINAL_PACKAGE}' not found. Creating src/${PACKAGE_NAME}."
+        mkdir -p "src/${PACKAGE_NAME}"
+        touch "src/${PACKAGE_NAME}/__init__.py"
+        print_success "Created src/${PACKAGE_NAME}/__init__.py."
     fi
-    
-    # Update docker-compose.yml
+
+    # Update pyproject.toml for src layout and new package name
+    update_pyproject "${PACKAGE_NAME}"
+
+    # Update docker-compose.yml basics and ensure PYTHONPATH points to /app/src
     if [ -f "docker-compose.yml" ]; then
-        sed -i "s/image: data-science-template:latest/image: ${PROJECT_NAME}:latest/" docker-compose.yml
-        sed -i "s/container_name: data-science-container/container_name: ${PROJECT_NAME}-container/" docker-compose.yml
+        sed -i "s/image: data-science-template:latest/image: ${PROJECT_NAME}:latest/" docker-compose.yml || true
+        sed -i "s/container_name: data-science-container/container_name: ${PROJECT_NAME}-container/" docker-compose.yml || true
+        sed -i "s|PYTHONPATH=/src/app|PYTHONPATH=/app/src|g" docker-compose.yml || true
         print_success "Updated docker-compose.yml."
     else
         print_warning "docker-compose.yml not found. Skipping update."
     fi
-        
-        # Update README.md
+
+    # Update README.md (reflect src layout)
     if [ -f "README.md" ]; then
-        # Create a new README appropriate for a generated project
         cat > README.md << EOF
-    # ${DISPLAY_NAME}
+# ${DISPLAY_NAME}
 
-A data science project with containerized development environment.
+A data science project with a containerized development environment.
 
-## Getting Started
-
-### Prerequisites
-
-- Docker
-- Docker Compose
-
-### Quick Start
-
-1. **Start the development container**:
+## Quick Start
+1. Start the development container:
    \`\`\`bash
    ./start_dev_container.sh
    \`\`\`
-
-2. **Access Jupyter Lab**:
-   Open your browser and navigate to:
-   \`\`\`
-   http://localhost:8888?token=easy
-   \`\`\`
-
-3. **Access Streamlit Demo** (if available):
-   \`\`\`
-   http://localhost:8503
-   \`\`\`
+2. Jupyter Lab: http://localhost:8888?token=easy
+3. Streamlit (if applicable): http://localhost:8503
 
 ## Project Structure
-
-- \`/${PACKAGE_NAME}_project\`: Main package directory
-- \`/data\`: Data directory
-  - \`/data/raw\`: Raw data files
-  - \`/data/processed\`: Processed data files
-  - \`/data/output\`: Output files and results
+- \`/src/${PACKAGE_NAME}\`: Main Python package
+- \`/data\`: Data directory (raw/processed/output, logs)
 - \`/notebooks\`: Jupyter notebooks
-- \`/scripts\`: Python scripts
+- \`/scripts\`: Utility scripts
 
-## Development
-
-### Adding Python Packages
-
-1. Add your required packages to \`requirements.txt\`
-2. Rebuild the container:
-   \`\`\`bash
-   docker-compose down
-   docker-compose up --build -d
-   \`\`\`
-
-### Using with VS Code
-
-1. Open VS Code
-2. Install the "Dev Containers" extension (formerly "Remote - Containers")
-3. Start the container using the provided script:
-   \`\`\`
-   bash
-   ./start_dev_container.sh
-   \`\`\`
-4. In VS Code, press F1 and select "Dev Containers: Attach to Running Container..."
-5. Select the ${PROJECT_NAME}-container from the list
-
-### Helpful Scripts
-   
-- **Commit Message Generator**: python scripts/suggest_commit_message.py
-    Analyzes your changes and suggests meaningful commit messages
-
-### Environment Variables
-
-The container loads environment variables from the env file. This includes:
-
-- API keys for LLM providers (OpenAI, Anthropic, Groq)
-- User configuration variables
-- Additional project-specific variables
-
-See example_env for the required variables format.
-
-## License
-
-Apache License
+## Add Dependencies
+- Edit \`requirements.txt\` and rebuild:
+  \`\`\`bash
+  docker compose down
+  docker compose up --build -d
+  \`\`\`
 EOF
-        print_success "Created new README.md for generated project."
+        print_success "Updated README.md."
     else
         print_warning "README.md not found. Skipping update."
     fi
-    
-    # Update imports and references across the repo (e.g., from data_science_project...)
-    replace_package_references "$ORIGINAL_PACKAGE" "${PACKAGE_NAME}_project"
+
+    # Replace imports and references (e.g., from data_science_project ...)
+    replace_package_references "$ORIGINAL_PACKAGE" "${PACKAGE_NAME}"
     print_success "Updated Python imports and related references."
-    
+
     # If there's a streamlit_demo.py, update it with the new project name
     if [ -f "streamlit_demo.py" ]; then
         sed -i "s/Data Science Template/${DISPLAY_NAME}/g" streamlit_demo.py
@@ -363,13 +356,12 @@ EOF
     fi
     
     # Make sure scripts are executable
-    chmod +x *.sh
+    chmod +x *.sh 2>/dev/null || true
     print_success "Made scripts executable."
-    
-    # Initialize new Git repository
+
     git init -b main
     git add .
-    git commit -m "Initial commit: Project created from data-science-container-template"
+    git commit -m "Initial commit: Project created from data-science-container-template (src + pyproject.toml)"
     
     # Create GitHub repository if requested
     if [[ $CREATE_REPO == "y" || $CREATE_REPO == "Y" ]]; then
