@@ -289,6 +289,32 @@ EOF
     fi
 }
 
+update_pyproject() {
+    local pkg="$1"
+    print_message "Writing pyproject.toml for src layout (package: ${pkg})..."
+    cat > pyproject.toml <<EOF
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "${pkg}"
+version = "0.1.0"
+description = "Generated project"
+readme = "README.md"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["${pkg}*"]
+EOF
+    print_success "pyproject.toml updated."
+}
+
+
 # Clone and setup project
 setup_project() {
     print_message "Setting up project..."
@@ -330,7 +356,7 @@ setup_project() {
         print_success "Created src/${PACKAGE_NAME}/__init__.py."
     fi
 
-    # Update pyproject.toml for src layout and new package name
+    # Write clean pyproject.toml for the new package
     update_pyproject "${PACKAGE_NAME}"
 
     # Update docker-compose.yml basics and ensure PYTHONPATH points to /app/src
