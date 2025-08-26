@@ -15,7 +15,8 @@ if [ ! -f /home/$USER_NAME/.jupyter/jupyter_notebook_config.py ]; then
 fi
 
 # Only try to install in dev mode if setup.py exists
-if [ -f /app/setup.py ]; then
+if [ -f /app/pyproject.toml ]; then
+    echo "Installing project (editable) via pyproject.toml..."
     pip install -e /app
 fi
 

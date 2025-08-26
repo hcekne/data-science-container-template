@@ -10,29 +10,11 @@ Core rules
 - Add/extend unit tests for all new logic.
 
 Style
-- Python 3.11+. Follow PEP 8 and PEP 257; use type hints everywhere.
+- Python 3.12+. Follow PEP 8 and PEP 257; use type hints everywhere.
 - Use pathlib (not os.path).
 - No print for diagnostics. Use logging (see below).
 - Handle errors explicitly; raise clear, actionable exceptions.
 
-Project layout (abbrev.)
-```
-├── data_science_project
-│   ├── config/                 # config package
-│   │   ├── logging_config.py
-│   │   └── paths.py            # exposes APP_LOGS_DIR
-│   ├── scripts/
-│   ├── utils/
-│   │   ├── database.py
-│   │   └── logging.py          # get_logger(__name__)
-│   └── webapp/                 # streamlit app
-├── data/
-│   └── logs/                   # APP_LOGS_DIR
-├── notebooks/
-├── scripts/
-├── tests/
-└── setup.py
-```
 
 Configuration
 - Centralize paths in `data_science_project.config.paths`. Expose `APP_LOGS_DIR` (Path to `repo_root/data/logs`).

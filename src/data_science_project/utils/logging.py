@@ -2,8 +2,8 @@ from logging.config import dictConfig
 import logging
 from pathlib import Path
 
-from data_science_project.config.logging_config import LOGGING_CONFIG
-from data_science_project.config.paths import APP_LOGS_DIR
+from src.config.logging_config import LOGGING_CONFIG
+from src.config.paths import APP_LOGS_DIR
 
 _CONFIGURED = False
 
