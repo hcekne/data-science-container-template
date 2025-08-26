@@ -260,6 +260,35 @@ EOF
     fi
 }
 
+create_env_file() {
+    local env_path=".env"
+    if [ -f ".env.example" ]; then
+        # Do not overwrite if user already created one
+        if [ -f "$env_path" ]; then
+            print_message ".env already exists; leaving it unchanged."
+        else
+            cp ".env.example" "$env_path"
+            print_success "Created .env from .env.example."
+        fi
+    else
+        cat > "$env_path" <<'EOF'
+ANTHROPIC_API_KEY=insert_your_key
+OPEN_AI_KEY=insert_your_key
+OPEN_AI_CODING_KEY=insert_your_key
+GOOGLE_SEARCH_ENGINE_ID=insert_your_key
+GROQ_API_KEY=insert_your_key
+EOF
+        print_success "Created .env with placeholder API keys."
+    fi
+
+    # Ensure .env is ignored
+    if [ -f ".gitignore" ]; then
+        grep -qE '(^|/)\.env(\s|$)' .gitignore || echo ".env" >> .gitignore
+    else
+        echo ".env" > .gitignore
+    fi
+}
+
 # Clone and setup project
 setup_project() {
     print_message "Setting up project..."
@@ -281,6 +310,9 @@ setup_project() {
     print_success "Git history removed."
 
     cd "$PROJECT_NAME" || exit 1
+
+    # Create .env for the new project
+    create_env_file
 
     # Ensure src layout and rename package directory
     if [ -d "src/${ORIGINAL_PACKAGE}" ]; then
