@@ -1,1 +1,7 @@
-!uv.lock
+# filepath: /.dockerignore
+__pycache__/
+.git/
+.venv/
+.mypy_cache/
+.pytest_cache/
+data/logs/

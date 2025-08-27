@@ -22,9 +22,22 @@ ENV UV_PROJECT_ENVIRONMENT=/usr/local \
 # Set the working directory
 WORKDIR /app
 
-COPY pyproject.toml ./
-COPY uv.lock ./ 
-RUN bash -lc 'if [ -f uv.lock ]; then uv sync --frozen --no-install-project; else uv sync --no-install-project; fi'
+
+
+#COPY uv.lock ./
+# COPY LICENSE README.md /app/
+
+# COPY test.md /app/pyproject.toml
+# RUN uv sync --frozen --no-install-project
+
+# COPY pyproject.toml ./
+# RUN uv sync --no-install-project
+
+
+# Copy lock and deps-only pyproject for fast, cacheable deps layer
+COPY pyproject.deps.toml ./pyproject.toml
+COPY uv.lock ./
+RUN uv sync --frozen --no-install-project
 
 # Use build arguments for user details
 ARG USER_NAME
