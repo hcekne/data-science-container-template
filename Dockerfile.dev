@@ -23,7 +23,7 @@ ENV UV_PROJECT_ENVIRONMENT=/usr/local \
 WORKDIR /app
 
 COPY pyproject.toml ./
-COPY uv.lock ./  # won’t fail if you also adjust .dockerignore to allow it
+COPY uv.lock ./ 
 RUN bash -lc 'if [ -f uv.lock ]; then uv sync --frozen --no-install-project; else uv sync --no-install-project; fi'
 
 # Use build arguments for user details
