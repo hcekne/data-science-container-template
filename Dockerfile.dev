@@ -11,17 +11,25 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Install uv (pinned) by copying the static binary
+COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /uvx /bin/
+
+# Tell uv "sync into the system interpreter" for project commands
+ENV UV_PROJECT_ENVIRONMENT=/usr/local \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+
 # Set the working directory
 WORKDIR /app
 
-# Create a temporary directory for requirements
-RUN mkdir /tmp/requirements
+# Install deps from pyproject.toml (no lockfile yet)
+COPY pyproject.toml ./
 
-# Copy requirements file
-COPY requirements.txt /tmp/requirements/requirements.txt
+# only run this when installing from pyproject.toml
+# RUN uv sync --no-install-project
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r /tmp/requirements/requirements.txt
+# run this when installing from uv.lock
+RUN uv sync --locked --no-install-project
 
 # Use build arguments for user details
 ARG USER_NAME
@@ -43,10 +51,8 @@ RUN chmod +x /usr/local/bin/custom_startup.sh
 RUN mkdir -p /home/$USER_NAME/.jupyter && \
     chown -R $USER_NAME:$USER_NAME /home/$USER_NAME/.jupyter
 
-# Expose ports for Jupyter
-EXPOSE 8888
-# Streamlit port
-EXPOSE 8501 
+# Expose ports for Jupyter and streamlit 
+EXPOSE 8888 8501
 
 # Switch to the non-root user
 USER $USER_NAME

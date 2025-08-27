@@ -24,7 +24,7 @@ services:
       - USER_ID=${USER_ID}
       - GROUP_ID=${GROUP_ID}
       - USER_NAME=${USER_NAME}
-      - PYTHONPATH=/src/app
+      - PYTHONPATH=/app/src
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
       - START_JUPYTER=yes

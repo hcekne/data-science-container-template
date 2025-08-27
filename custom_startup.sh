@@ -14,7 +14,7 @@ if [ ! -f /home/$USER_NAME/.jupyter/jupyter_notebook_config.py ]; then
     echo "c.ServerApp.open_browser = False" >> /home/$USER_NAME/.jupyter/jupyter_notebook_config.py
 fi
 
-# Only try to install in dev mode if setup.py exists
+# Installing project in editable mode if pyproject.toml exists
 if [ -f /app/pyproject.toml ]; then
     echo "Installing project (editable) via pyproject.toml..."
     pip install -e /app
