@@ -290,28 +290,21 @@ EOF
 }
 
 update_pyproject() {
-    local pkg="$1"
-    print_message "Writing pyproject.toml for src layout (package: ${pkg})..."
-    cat > pyproject.toml <<EOF
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+  local pkg="$1"
+  local old="data_science_project"
 
-[project]
-name = "${pkg}"
-version = "0.1.0"
-description = "Generated project"
-readme = "README.md"
-requires-python = ">=3.12"
+  if [[ -z "$pkg" ]]; then
+    echo "usage: update_pyproject <new_package_name>" >&2
+    return 1
+  fi
 
-[tool.setuptools]
-package-dir = {"" = "src"}
+  # In-place edits (GNU sed). On macOS use `-i ''` instead of `-i`.
+  sed -i -E \
+    -e "s/^(\s*name\s*=\s*\")${old}(\".*)$/\1${pkg}\2/" \
+    -e "s/^(\s*include\s*=\s*\[\s*\")${old}\*(\".*)$/\1${pkg}*\2/" \
+    pyproject.toml
 
-[tool.setuptools.packages.find]
-where = ["src"]
-include = ["${pkg}*"]
-EOF
-    print_success "pyproject.toml updated."
+  echo "pyproject.toml updated to package: ${pkg}"
 }
 
 
