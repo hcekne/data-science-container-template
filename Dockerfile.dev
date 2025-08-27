@@ -22,14 +22,9 @@ ENV UV_PROJECT_ENVIRONMENT=/usr/local \
 # Set the working directory
 WORKDIR /app
 
-# Install deps from pyproject.toml (no lockfile yet)
 COPY pyproject.toml ./
-
-# only run this when installing from pyproject.toml
-# RUN uv sync --no-install-project
-
-# run this when installing from uv.lock
-RUN uv sync --locked --no-install-project
+COPY uv.lock ./  # won’t fail if you also adjust .dockerignore to allow it
+RUN bash -lc 'if [ -f uv.lock ]; then uv sync --frozen --no-install-project; else uv sync --no-install-project; fi'
 
 # Use build arguments for user details
 ARG USER_NAME
